@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blog API Client — Demo</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; color: #1a1a2e; }
+  article { border: 1px solid #ddd; border-radius: 12px; padding: 1rem; margin: 1rem 0; }
+  input, textarea { width: 100%; padding: .6rem; margin: .3rem 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+  button { padding: .6rem 1.1rem; border: 0; border-radius: 999px; background: #6c5ce7; color: #fff; cursor: pointer; }
+  button.delete { background: #e74c3c; }
+  .note { background: #f0edff; border-radius: 12px; padding: 1rem; }
+</style>
+</head>
+<body>
+<h1>Blog API Client — demo</h1>
+<p class="note"><strong>Demo only:</strong> this page uses an in-browser mock API, so it works with no backend and no key. It does <em>not</em> connect to Sahil's live Blog-Api-Project. The reusable <code>BlogApiClient</code> class in <code>client.mjs</code> is the part you would point at a real FastAPI blog API.</p>
+<h2>New post</h2>
+<input id="title" placeholder="Title">
+<textarea id="body" rows="3" placeholder="Body"></textarea>
+<button id="create">Create post</button>
+<h2>Posts</h2>
+<div id="posts"></div>
+<script type="module">
+  import { MockBlogApi } from "./client.mjs";
+  const api = new MockBlogApi();
+  const listEl = document.getElementById("posts");
+  async function render() {
+    const posts = await api.listPosts();
+    listEl.innerHTML = posts.map((p) => `<article><h3>${escapeHtml(p.title)}</h3><p>${escapeHtml(p.body)}</p><button class="delete" data-id="${p.id}">Delete</button></article>`).join("") || "<p>No posts yet.</p>";
+    listEl.querySelectorAll("button.delete").forEach((b) => b.addEventListener("click", async () => { await api.deletePost(b.dataset.id); render(); }));
+  }
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  document.getElementById("create").addEventListener("click", async () => {
+    try {
+      await api.createPost({ title: document.getElementById("title").value, body: document.getElementById("body").value });
+      document.getElementById("title").value = ""; document.getElementById("body").value = "";
+      render();
+    } catch (e) { alert(e.message); }
+  });
+  render();
+</script>
+</body>
+</html>
